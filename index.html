@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>حاسبة صلاحية المنتج – v46</title>
+<style>
+  :root{
+    --green-bg:#dff4e3; --green-fg:#256d1b;
+    --orange-bg:#fdeedc; --orange-fg:#8b4513;
+    --red-bg:#fbe4e4; --red-fg:#842222;
+    --muted:#6b7280; --ink:#111; --card:#fff; --page:#f9fafb;
+  }
+  *{box-sizing:border-box}
+  body{font-family:"Tahoma",sans-serif;background:var(--page);margin:0;text-align:center}
+
+  .authority{margin:40px 0 20px;line-height:1.6;font-weight:bold;color:#000}
+  .hero{
+    background:linear-gradient(135deg,#2c3e94,#1a265e);color:#fff;border-radius:18px;
+    width:92%;margin:0 auto 20px;padding:16px 18px;box-shadow:0 6px 18px rgba(0,0,0,.15);
+  }
+  .hero h1{margin:0 0 6px;font-size:1.45rem;font-weight:800}
+  .hero p{margin:0;color:#e8eaf6;font-size:0.98rem;white-space:nowrap}
+
+  .input-group{margin:15px auto;width:75%;text-align:right}
+  label{font-weight:600;color:#111;display:block;margin-bottom:6px}
+  input[type="date"]{width:100%;height:45px;border:1px solid #d4d4d4;border-radius:10px;padding:0 10px;font-size:1rem;background:#fff}
+
+  button{
+    width:200px;height:45px;font-size:1.1rem;border-radius:10px;border:1px solid #243b77;
+    background:#f5f8ff;color:#111;font-weight:bold;cursor:pointer;transition:.3s
+  }
+  button:hover{background:#dce6ff}
+
+  .card{
+    background:var(--card);border-radius:15px;padding:16px 20px 18px;margin:20px auto;width:90%;
+    box-shadow:0 4px 15px rgba(0,0,0,.05);text-align:center;
+  }
+
+  .dates{font-size:1.2rem;font-weight:600;color:#000;margin-bottom:10px}
+  .details{color:#333;font-size:1rem}
+
+  .mid h3{margin:0 0 8px;color:#555;font-size:1.1rem}
+  .mid .mid-date{font-size:1.4rem;font-weight:bold;color:var(--red-fg)}
+
+  .status{text-align:right}
+  .status .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .status-title{font-weight:bold;color:#000}
+  .status-pill{display:inline-block;border-radius:999px;padding:8px 18px;font-weight:700;color:#fff}
+  .pill-green{background:var(--green-bg);color:var(--green-fg)}
+  .pill-red{background:var(--red-bg);color:var(--red-fg)}
+  .status-info{color:var(--muted);font-size:.95rem;margin:8px 0 10px;text-align:center}
+
+  /* ✅ الصندوق الأحمر/البرتقالي بعرض كامل حتى لا تخرج كلمة "فورًا" */
+  .banner{
+    border-radius:12px;padding:14px 16px;font-weight:800;font-size:1.02rem;
+    text-align:center;width:100%;margin-inline:auto;white-space:nowrap;overflow:hidden;
+  }
+  .green{background:var(--green-bg);color:var(--green-fg)}
+  .orange{background:var(--orange-bg);color:var(--orange-fg)}
+  .red{background:var(--red-bg);color:var(--red-fg)}
+
+  /* الخط الزمني */
+  .timeline .title{font-weight:800;font-size:1.12rem;margin-bottom:10px}
+  .bar{width:98%;height:5px;border-radius:999px;background:#e5e7eb;position:relative;margin:0 auto}
+  .bar-fill{height:100%;border-radius:999px;width:0%;transition:width .35s ease}
+  .bar-green{background:#5aa05f}
+  .bar-orange{background:#b8743a}
+  .bar-red{background:#a04646}
+
+  /* ✅ علامة منتصف المدة أوضح */
+  .bar::after{
+    content:"";position:absolute;top:-4px;bottom:-4px;width:5px;background:#4b5563;left:50%;
+    transform:translateX(-50%);border-radius:3px;opacity:.95;box-shadow:0 0 0 1px rgba(0,0,0,.08);
+  }
+
+  /* ✅ محاذاة التسميات: الإنتاج يمين بداية الخط، انتهاء الصلاحية يسار نهايته */
+  .ticks{
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:10px;color:#374151;
+    width:98%;margin-inline:auto;align-items:start;
+  }
+  .ticks .cell{line-height:1.35}
+  .ticks .label{font-weight:600}
+  .ticks .start{text-align:right; padding-inline-end:4px; transform:translateX(2px);} /* أقرب لبداية الخط يمينًا */
+  .ticks .center{text-align:center;}
+  .ticks .end{text-align:left;  padding-inline-start:4px; transform:translateX(-2px);} /* أقرب لنهاية الخط يسارًا */
+
+  @media (max-width:420px){
+    .banner{font-size:1rem}
+  }
+</style>
+</head>
+<body>
+
+  <div class="authority">
+    <div>المديرية العامة للتربية والتعليم بمحافظة ظفار</div>
+    <div>دائرة التوجيه المهني والإرشاد الطلابي – قسم الإرشاد والتوعية</div>
+  </div>
+
+  <div class="hero">
+    <h1>حاسبة صلاحية المنتج</h1>
+    <p>أدخل التواريخ لعرض منتصف المدة، الحالة، والمدة المتبقية.</p>
+  </div>
+
+  <div class="input-group">
+    <label>تاريخ الإنتاج</label>
+    <input type="date" id="start">
+  </div>
+
+  <div class="input-group">
+    <label>تاريخ الانتهاء</label>
+    <input type="date" id="end">
+  </div>
+
+  <div class="input-group">
+    <label>تاريخ اليوم</label>
+    <input type="date" id="today">
+  </div>
+
+  <button onclick="calculate()">احسب</button>
+
+  <div id="result" class="card" style="display:none;">
+    <div class="dates" id="dates"></div>
+    <div class="details" id="details"></div>
+  </div>
+
+  <div id="midResult" class="card mid" style="display:none;">
+    <h3>تاريخ منتصف المدة</h3>
+    <div class="mid-date" id="midDate"></div>
+  </div>
+
+  <div id="statusResult" class="card status" style="display:none;">
+    <div class="row">
+      <span class="status-title">الحالة:</span>
+      <span id="statusPill" class="status-pill" style="display:none;"></span>
+    </div>
+    <div id="statusInfo" class="status-info"></div>
+    <div id="statusBanner" class="banner"></div>
+  </div>
+
+  <div id="tlResult" class="card timeline" style="display:none;">
+    <div class="title" id="tlTitle">الخط الزمني للصلاحية (0%)</div>
+    <div class="bar"><div id="barFill" class="bar-fill"></div></div>
+    <div class="ticks">
+      <div class="cell start">
+        <div class="label">الإنتاج</div>
+        <div id="tickStart">–</div>
+      </div>
+      <div class="cell center">
+        <div class="label">منتصف المدة</div>
+        <div id="tickMid">–</div>
+      </div>
+      <div class="cell end">
+        <div class="label">انتهاء الصلاحية</div>
+        <div id="tickEnd">–</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+function calculate(){
+  const s=document.getElementById('start').value;
+  const e=document.getElementById('end').value;
+  const t=document.getElementById('today').value;
+  if(!s||!e||!t) return;
+
+  const start=new Date(s), end=new Date(e), today=new Date(t);
+  const fmt=d=>d.toLocaleDateString('ar-EG');
+
+  const totalDays=Math.floor((end-start)/(1000*60*60*24));
+  const years=Math.floor(totalDays/365);
+  const months=Math.floor((totalDays%365)/30);
+  const days=totalDays-years*365-months*30;
+  const mid=new Date((start.getTime()+end.getTime())/2);
+
+  // المدة
+  document.getElementById('result').style.display='block';
+  document.getElementById('dates').textContent=`${fmt(start)} إلى ${fmt(end)}`;
+  document.getElementById('details').innerHTML=`<strong>المدة الإجمالية:</strong> ${totalDays} يومًا (${years} سنة ${months} شهر ${days} يوم)`;
+
+  // منتصف
+  document.getElementById('midResult').style.display='block';
+  document.getElementById('midDate').textContent=fmt(mid);
+
+  // الحالة
+  const pill=document.getElementById('statusPill');
+  const info=document.getElementById('statusInfo');
+  const banner=document.getElementById('statusBanner');
+  document.getElementById('statusResult').style.display='block';
+  pill.style.display='none'; banner.className='banner'; info.textContent='';
+
+  if(today < mid){
+    pill.textContent='صالح';
+    pill.className='status-pill pill-green';
+    pill.style.display='inline-block';
+    banner.textContent='لم يتجاوز منتصف المدة ✓';
+    banner.classList.add('green');
+  }else if(today>=mid && today<=end){
+    banner.textContent='تجاوز منتصف المدة (توقف عن بيع المنتج / بلّغ)';
+    banner.classList.add('orange');
+  }else{
+    pill.textContent='غير صالح';
+    pill.className='status-pill pill-red';
+    pill.style.display='inline-block';
+    const expiredDays=Math.max(0,Math.floor((today-end)/(1000*60*60*24)));
+    info.textContent=`منتهي منذ ${expiredDays} يومًا.`;
+    banner.textContent='انتهت مدة الصلاحية (توقف عن بيع المنتج / بلّغ فورًا)';
+    banner.classList.add('red');
+  }
+
+  // الخط الزمني
+  const denom=(end-start);
+  const num=Math.min(Math.max(today-start,0),denom);
+  const pct=Math.round((num/denom)*100);
+
+  const fill=document.getElementById('barFill');
+  const tlTitle=document.getElementById('tlTitle');
+  document.getElementById('tlResult').style.display='block';
+  tlTitle.textContent=`الخط الزمني للصلاحية (${pct}%)`;
+
+  fill.className='bar-fill';
+  if(today < mid) fill.classList.add('bar-green');
+  else if(today>=mid && today<=end) fill.classList.add('bar-orange');
+  else fill.classList.add('bar-red');
+  fill.style.width=pct+'%';
+
+  document.getElementById('tickStart').textContent=fmt(start);
+  document.getElementById('tickMid').textContent=fmt(mid);
+  document.getElementById('tickEnd').textContent=fmt(end);
+}
+</script>
+</body>
+  </html>
